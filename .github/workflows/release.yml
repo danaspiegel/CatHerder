@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release, e.g. v1.0.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # github.ref_name is the tag for tag pushes; a manual run supplies it.
+      # Both are placed in the environment rather than interpolated into the
+      # shell, so the value is never treated as script.
+      - name: Resolve version
+        env:
+          RAW_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          case "$RAW_TAG" in
+            v[0-9]*) ;;
+            *) echo "::error::Tag '$RAW_TAG' must look like v1.2.3"; exit 1 ;;
+          esac
+          echo "TAG=$RAW_TAG" >> "$GITHUB_ENV"
+          echo "VERSION=${RAW_TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Stamp the bundle version from the tag
+        run: |
+          set -euo pipefail
+          plutil -replace CFBundleShortVersionString -string "$VERSION" Resources/Info.plist
+          plutil -replace CFBundleVersion -string "${{ github.run_number }}" Resources/Info.plist
+          plutil -p Resources/Info.plist | grep CFBundle
+
+      - name: Test
+        run: swift test
+
+      - name: Build
+        run: ./build-app.sh --release
+
+      - name: Verify bundle
+        run: |
+          set -euo pipefail
+          APP="build/CatHerder.app"
+          test -x "$APP/Contents/MacOS/CatHerder"
+          codesign --verify --deep --strict "$APP"
+          # Fail loudly rather than shipping an app with no icon.
+          test -f "$APP/Contents/Resources/AppIcon.icns"
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          ZIP="CatHerder-$VERSION.zip"
+          ditto -c -k --keepParent --sequesterRsrc build/CatHerder.app "$ZIP"
+          shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES=$(cat <<'EOF'
+          ### Install
+
+          1. Download and unzip `CatHerder.zip`, then drag **CatHerder.app** to `/Applications`.
+          2. The build is ad-hoc signed rather than notarized, so on first launch
+             macOS will refuse to open it. Right-click the app and choose **Open**,
+             then confirm — or clear the quarantine flag:
+
+              ```bash
+              xattr -dr com.apple.quarantine /Applications/CatHerder.app
+              ```
+
+          3. The first time you use **Switch to Terminal Tab**, approve the
+             Automation prompt (System Settings → Privacy & Security → Automation).
+
+          Requires macOS 14 or later.
+          EOF
+          )
+          gh release create "$TAG" \
+            --title "CatHerder $VERSION" \
+            --notes "$NOTES" \
+            --generate-notes \
+            "$ZIP" "$ZIP.sha256"
