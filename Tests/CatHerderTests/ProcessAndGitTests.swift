@@ -158,5 +158,56 @@ struct TerminalActivatorTests {
         #expect(!TerminalActivator.Result.noTerminalInfo.isSuccess)
         #expect(!TerminalActivator.Result.failed("boom").isSuccess)
         #expect(TerminalActivator.Result.failed("boom").message == "boom")
+        #expect(!TerminalActivator.Result.permissionDenied("Terminal").isSuccess)
+        #expect(!TerminalActivator.Result.terminalNotRunning("iTerm2").isSuccess)
+    }
+
+    /// Only a denial is something the user can fix in settings; the others
+    /// should not offer a button that would not help.
+    @Test("only a permission denial points at settings")
+    func settingsAffordance() {
+        #expect(TerminalActivator.Result.permissionDenied("Terminal").needsAutomationSettings)
+        #expect(!TerminalActivator.Result.terminalNotRunning("Terminal").needsAutomationSettings)
+        #expect(!TerminalActivator.Result.failed("boom").needsAutomationSettings)
+        #expect(!TerminalActivator.Result.focusedTab.needsAutomationSettings)
+        #expect(!TerminalActivator.Result.noTerminalInfo.needsAutomationSettings)
+    }
+
+    @Test("a denial names the app and explains the fix")
+    func denialMessage() {
+        let message = TerminalActivator.Result.permissionDenied("Terminal").message
+        #expect(message.contains("Terminal"))
+        #expect(message.contains("Automation"))
+    }
+}
+
+@Suite("Automation permission")
+struct AutomationPermissionTests {
+
+    /// Checking must never send an event, so an app that is not running reports
+    /// exactly that rather than launching it.
+    @Test("reports a target that is not running")
+    func notRunning() {
+        // A bundle id that certainly is not running.
+        let result = TerminalActivator.permission(
+            forBundleID: "com.example.definitely-not-running-\(UUID().uuidString)")
+        #expect(result == .targetNotRunning || result == .denied)
+    }
+
+    /// Whatever the answer, asking must be side-effect free and must not hang.
+    @Test("querying a real app returns a definite answer")
+    func realApp() {
+        let result = TerminalActivator.permission(forBundleID: "com.apple.finder")
+        switch result {
+        case .granted, .denied, .notYetAsked, .targetNotRunning:
+            break   // any of these is a valid environment-dependent answer
+        case .unknown(let status):
+            Issue.record("unexpected OSStatus \(status)")
+        }
+    }
+
+    @Test("a malformed bundle id does not crash")
+    func malformed() {
+        _ = TerminalActivator.permission(forBundleID: "")
     }
 }

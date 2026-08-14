@@ -136,6 +136,20 @@ be driven tab-by-tab from AppleScript, so those are simply brought forward.
 System Settings › Privacy & Security › Automation. The build script signs the
 bundle ad-hoc with a stable identifier so the grant survives rebuilds.
 
+Permission is checked *before* any event is sent, via
+`AEDeterminePermissionToAutomateTarget`. This matters for more than tidiness:
+macOS activates the target application as a side effect of delivering an Apple
+Event even when it then refuses it, so simply sending the event and handling the
+`-1743` error still yanked the terminal to the front on every denied attempt.
+Asking first means a denial changes nothing on screen.
+
+The call is synchronous and blocks while the consent dialog is up, so it runs off
+the main thread — otherwise the window freezes behind the prompt.
+
+The four answers map to distinct outcomes: granted (send the event), never asked
+(raise the prompt, then act on the reply), denied (report it, and offer a button
+that opens the Automation pane), and target not running (the tab is gone).
+
 ## Tests
 
 ```bash

@@ -26,6 +26,18 @@ final class FleetMonitor {
         let id = UUID()
         var text: String
         var isError: Bool
+        /// Offered as a button when the user has to change something.
+        var action: Action?
+
+        enum Action: Sendable, Equatable {
+            case openAutomationSettings
+
+            var title: String {
+                switch self {
+                case .openAutomationSettings: "Open Settings"
+                }
+            }
+        }
     }
 
     /// How often the live view re-scans the process table.
@@ -232,7 +244,11 @@ final class FleetMonitor {
         }
         Task {
             let result = await TerminalActivator.activate(terminal: process.terminal)
-            statusMessage = StatusMessage(text: result.message, isError: !result.isSuccess)
+            statusMessage = StatusMessage(
+                text: result.message,
+                isError: !result.isSuccess,
+                action: result.needsAutomationSettings ? .openAutomationSettings : nil
+            )
         }
     }
 

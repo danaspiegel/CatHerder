@@ -1,4 +1,5 @@
 import AppKit
+import CoreServices
 import Foundation
 
 /// Brings the terminal tab hosting a given Claude instance to the front.
@@ -65,13 +66,22 @@ enum TerminalActivator {
         case focusedTab
         case activatedAppOnly(String)
         case noTerminalInfo
+        /// Automation is switched off for this app, so nothing was sent.
+        case permissionDenied(String)
+        case terminalNotRunning(String)
         case failed(String)
 
         var isSuccess: Bool {
             switch self {
             case .focusedTab, .activatedAppOnly: true
-            case .noTerminalInfo, .failed: false
+            case .noTerminalInfo, .permissionDenied, .terminalNotRunning, .failed: false
             }
+        }
+
+        /// True when the user has to change a setting before this can work.
+        var needsAutomationSettings: Bool {
+            if case .permissionDenied = self { return true }
+            return false
         }
 
         var message: String {
@@ -82,10 +92,71 @@ enum TerminalActivator {
                 "Brought \(app) forward. It can't focus individual tabs from AppleScript, so pick the tab yourself."
             case .noTerminalInfo:
                 "No terminal information for this instance."
+            case .permissionDenied(let app):
+                "CatHerder isn't allowed to control \(app), so it can't switch tabs. "
+                + "Enable it under Automation in Privacy & Security settings."
+            case .terminalNotRunning(let app):
+                "\(app) isn't running any more, so that tab is gone."
             case .failed(let reason):
                 reason
             }
         }
+    }
+
+    // MARK: - Automation permission
+
+    /// Whether this app may drive another via Apple Events.
+    enum Permission: Sendable, Equatable {
+        case granted
+        /// Explicitly switched off in Privacy & Security settings.
+        case denied
+        /// Never asked, so sending an event would raise the consent prompt.
+        case notYetAsked
+        case targetNotRunning
+        case unknown(OSStatus)
+    }
+
+    /// Asks the Apple Events machinery about permission *without sending an
+    /// event*, which is what lets a denied attempt fail without dragging the
+    /// terminal to the front first.
+    static func permission(forBundleID bundleID: String,
+                           askUserIfNeeded: Bool = false) -> Permission {
+        var target = AEAddressDesc()
+        let identifier = Array(bundleID.utf8)
+        guard AECreateDesc(typeApplicationBundleID, identifier, identifier.count, &target) == noErr
+        else { return .unknown(OSStatus(paramErr)) }
+        defer { AEDisposeDesc(&target) }
+
+        let status = AEDeterminePermissionToAutomateTarget(
+            &target, typeWildCard, typeWildCard, askUserIfNeeded)
+
+        switch status {
+        case noErr: return .granted
+        case OSStatus(errAEEventNotPermitted): return .denied
+        case OSStatus(errAEEventWouldRequireUserConsent): return .notYetAsked
+        case OSStatus(procNotFound): return .targetNotRunning
+        default: return .unknown(status)
+        }
+    }
+
+    /// `AEDeterminePermissionToAutomateTarget` is synchronous, and blocks while
+    /// the consent dialog is up, so it is kept off the main thread.
+    private static func permissionOffMainThread(forBundleID bundleID: String,
+                                               askUserIfNeeded: Bool) async -> Permission {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: permission(forBundleID: bundleID,
+                                                          askUserIfNeeded: askUserIfNeeded))
+            }
+        }
+    }
+
+    /// Opens the pane where the grant lives.
+    @MainActor
+    static func openAutomationSettings() {
+        let url = URL(string:
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
+        if let url { NSWorkspace.shared.open(url) }
     }
 
     /// Focus the tab attached to `terminal.tty`.
@@ -93,6 +164,30 @@ enum TerminalActivator {
         guard let tty = terminal.tty, let program = terminal.program,
               let emulator = Emulator(termProgram: program) else {
             return .noTerminalInfo
+        }
+
+        // Check before sending anything. macOS activates the target app as a
+        // side effect of an Apple Event even when it goes on to refuse it, so
+        // asking first is the only way a denial leaves the terminal alone.
+        if let bundleID = emulator.bundleID, emulator.supportsTTYLookup {
+            switch await permissionOffMainThread(forBundleID: bundleID, askUserIfNeeded: false) {
+            case .granted:
+                break
+            case .notYetAsked:
+                // Raise the consent prompt on its own, then act on the answer.
+                // Asking blocks until the user replies, so it must not run on
+                // the main actor or the window would freeze behind the dialog.
+                if await permissionOffMainThread(forBundleID: bundleID,
+                                                 askUserIfNeeded: true) != .granted {
+                    return .permissionDenied(emulator.displayName)
+                }
+            case .denied:
+                return .permissionDenied(emulator.displayName)
+            case .targetNotRunning:
+                return .terminalNotRunning(emulator.displayName)
+            case .unknown:
+                break   // fall through and let the script report the real error
+            }
         }
 
         switch emulator {
@@ -164,11 +259,10 @@ enum TerminalActivator {
                 if let error {
                     let number = error[NSAppleScript.errorNumber] as? Int ?? 0
                     let text = error[NSAppleScript.errorMessage] as? String ?? "AppleScript failed"
-                    // -1743: the user has not granted Automation permission yet.
+                    // Normally caught by the pre-flight check above; this
+                    // covers a grant revoked between checking and sending.
                     if number == -1743 {
-                        continuation.resume(returning: .failed(
-                            "Automation permission denied. Allow CatHerder to control "
-                            + "\(emulator.displayName) in System Settings › Privacy & Security › Automation."))
+                        continuation.resume(returning: .permissionDenied(emulator.displayName))
                     } else {
                         continuation.resume(returning: .failed(text))
                     }

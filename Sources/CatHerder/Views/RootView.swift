@@ -234,13 +234,24 @@ struct StatusToast: View {
     let dismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: message.isError
                   ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                 .foregroundStyle(message.isError ? .orange : .green)
             Text(message.text)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
+            if let action = message.action {
+                Button(action.title) {
+                    switch action {
+                    case .openAutomationSettings:
+                        TerminalActivator.openAutomationSettings()
+                    }
+                    dismiss()
+                }
+                .buttonStyle(.link)
+                .fontWeight(.semibold)
+            }
             Button("Dismiss", action: dismiss)
                 .buttonStyle(.link)
         }
@@ -253,8 +264,11 @@ struct StatusToast: View {
         .padding(.bottom, 16)
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .task(id: message.id) {
-            // Auto-dismiss so the toast never sits there permanently.
-            try? await Task.sleep(for: .seconds(message.isError ? 9 : 4))
+            // Only confirmations time out. A failure usually needs the user to
+            // do something, so it waits to be dismissed rather than vanishing
+            // before it has been read.
+            guard !message.isError else { return }
+            try? await Task.sleep(for: .seconds(4))
             dismiss()
         }
     }
