@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>CatHerder</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.lucidgreen.CatHerder</string>
+	<string>co.foundertherapy.CatHerder</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

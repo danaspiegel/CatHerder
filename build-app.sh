@@ -25,7 +25,7 @@ for arg in "$@"; do
 done
 
 APP_NAME="CatHerder"
-BUNDLE_ID="io.lucidgreen.CatHerder"
+BUNDLE_ID="co.foundertherapy.CatHerder"
 OUT_DIR="build"
 APP="$OUT_DIR/$APP_NAME.app"
 
