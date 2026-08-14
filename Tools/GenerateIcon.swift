@@ -5,10 +5,10 @@ import AppKit
 //
 //   swift Tools/GenerateIcon.swift <output-directory>
 //
-// Design notes: pixel-art cats on leashes — herding cats being the job the app
-// does. Everything is drawn on a coarse grid so the result reads as deliberate
-// pixel art rather than a blurry illustration, and interpolation is disabled so
-// the pixels stay crisp and square at 16pt as well as at 1024pt.
+// Design notes: three pixel-art cats on leashes, all held in one hand — herding
+// cats being the job the app does. Everything is drawn on a coarse grid so the
+// result reads as deliberate pixel art rather than a blurry illustration, and
+// interpolation is disabled so the pixels stay crisp and square at every size.
 
 // MARK: - Palette
 
@@ -36,19 +36,18 @@ let catFacingRight = [
     ".#.##.#.#",
 ]
 
-let catFacingLeft = [
-    "..#.....#",
-    "..##...##",
-    "#########",
-    "###o###o#",
-    "#########",
-    "###ccccc.",
-    "#.######.",
-    "#.######.",
-    "#.#.##.#.",
+/// A smaller cat, so three of them fit without crowding.
+let kitten = [
+    "#...#",
+    "#####",
+    "#o#o#",
+    "#####",
+    ".ccc.",
+    "####.",
+    "#..#.",
 ]
 
-/// The grip both leashes run up to.
+/// The grip all three leashes run up to.
 let handSprite = [
     ".###.",
     "#####",
@@ -64,7 +63,7 @@ let handSprite = [
 /// Small icons get a coarser grid and a single cat: at 32pt a 24-cell grid
 /// leaves barely one pixel per cell, and two cats plus leashes turn to mush.
 /// Simplifying the composition is what pixel art does instead of scaling down.
-func gridSize(for size: CGFloat) -> CGFloat { size <= 64 ? 13 : 24 }
+func gridSize(for size: CGFloat) -> CGFloat { size <= 64 ? 13 : 26 }
 
 func drawIcon(size S: CGFloat) {
     let inset = S * 0.094
@@ -116,20 +115,26 @@ func drawIcon(size S: CGFloat) {
             if y != end.row { y += y < end.row ? 1 : -1 }
             if x != end.column { x += x < end.column ? 1 : -1 }
         }
+        fill(end.column, end.row, leashColor)
     }
 
     if isCompact {
-        // One cat, filling the tile: still unmistakably a cat on a leash.
+        // Three kittens plus three leashes is mush at 32pt, so small sizes drop
+        // to a single full-size cat. Simplifying the composition is what pixel
+        // art does instead of scaling the same drawing down.
         draw(handSprite, atColumn: 7, row: 0, coat: creamCat)
         drawLeash(from: (8, 4), to: (4, 8))
         draw(catFacingRight, atColumn: 2, row: 4, coat: gingerCat)
     } else {
-        draw(handSprite, atColumn: 10, row: 2, coat: creamCat)
-        drawLeash(from: (11, 6), to: (6, 13))
-        drawLeash(from: (13, 6), to: (17, 14))
+        // One hand, three leashes, three cats going their own way.
+        draw(handSprite, atColumn: 11, row: 2, coat: creamCat)
+        drawLeash(from: (12, 6), to: (4, 15))
+        drawLeash(from: (13, 6), to: (11, 16))
+        drawLeash(from: (14, 6), to: (19, 15))
 
-        draw(catFacingRight, atColumn: 2, row: 13, coat: gingerCat)
-        draw(catFacingLeft, atColumn: 13, row: 14, coat: creamCat)
+        draw(kitten, atColumn: 2, row: 15, coat: gingerCat)
+        draw(kitten, atColumn: 9, row: 16, coat: creamCat)
+        draw(kitten, atColumn: 17, row: 15, coat: gingerCat)
     }
 
     NSGraphicsContext.restoreGraphicsState()
