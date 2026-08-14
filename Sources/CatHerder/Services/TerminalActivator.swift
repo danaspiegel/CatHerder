@@ -93,7 +93,7 @@ enum TerminalActivator {
             case .noTerminalInfo:
                 "No terminal information for this instance."
             case .permissionDenied(let app):
-                "CatHerder isn't allowed to control \(app), so it can't switch tabs. "
+                "Cat Herder isn't allowed to control \(app), so it can't switch tabs. "
                 + "Enable it under Automation in Privacy & Security settings."
             case .terminalNotRunning(let app):
                 "\(app) isn't running any more, so that tab is gone."

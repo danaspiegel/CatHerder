@@ -51,7 +51,7 @@ jobs:
       - name: Verify bundle
         run: |
           set -euo pipefail
-          APP="build/CatHerder.app"
+          APP="build/Cat Herder.app"
           test -x "$APP/Contents/MacOS/CatHerder"
           codesign --verify --deep --strict "$APP"
           # Fail loudly rather than shipping an app with no icon.
@@ -61,7 +61,7 @@ jobs:
         run: |
           set -euo pipefail
           ZIP="CatHerder-$VERSION.zip"
-          ditto -c -k --keepParent --sequesterRsrc build/CatHerder.app "$ZIP"
+          ditto -c -k --keepParent --sequesterRsrc "build/Cat Herder.app" "$ZIP"
           shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
           echo "ZIP=$ZIP" >> "$GITHUB_ENV"
 
@@ -73,13 +73,13 @@ jobs:
           NOTES=$(cat <<'EOF'
           ### Install
 
-          1. Download and unzip `CatHerder.zip`, then drag **CatHerder.app** to `/Applications`.
+          1. Download and unzip the archive, then drag **Cat Herder.app** to `/Applications`.
           2. The build is ad-hoc signed rather than notarized, so on first launch
              macOS will refuse to open it. Right-click the app and choose **Open**,
              then confirm — or clear the quarantine flag:
 
               ```bash
-              xattr -dr com.apple.quarantine /Applications/CatHerder.app
+              xattr -dr com.apple.quarantine "/Applications/Cat Herder.app"
               ```
 
           3. The first time you use **Switch to Terminal Tab**, approve the

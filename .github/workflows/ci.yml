@@ -35,7 +35,7 @@ jobs:
       - name: Verify bundle
         run: |
           set -euo pipefail
-          APP="build/CatHerder.app"
+          APP="build/Cat Herder.app"
           test -x "$APP/Contents/MacOS/CatHerder"
           test -f "$APP/Contents/Info.plist"
           codesign --verify --deep --strict --verbose=2 "$APP"
@@ -44,7 +44,7 @@ jobs:
           test -f "$APP/Contents/Resources/AppIcon.icns"
 
       - name: Package
-        run: ditto -c -k --keepParent --sequesterRsrc build/CatHerder.app CatHerder.zip
+        run: ditto -c -k --keepParent --sequesterRsrc "build/Cat Herder.app" CatHerder.zip
 
       - uses: actions/upload-artifact@v4
         with:

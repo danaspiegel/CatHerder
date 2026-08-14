@@ -2,6 +2,24 @@ import SwiftUI
 
 // MARK: - Shared cells
 
+/// The name given with `/rename`, or a clear placeholder when there is none.
+struct NameCell: View {
+    let session: MonitoredSession
+
+    var body: some View {
+        if let name = session.name {
+            Text(name)
+                .fontWeight(.medium)
+                .lineLimit(2)
+                .help(name)
+        } else {
+            Text("unnamed")
+                .foregroundStyle(.tertiary)
+                .help("Give this session a name with /rename")
+        }
+    }
+}
+
 /// Directory name with its tilde-path underneath.
 struct DirectoryCell: View {
     let session: MonitoredSession
@@ -93,6 +111,7 @@ struct LiveSessionsTable: View {
 
     @Environment(FleetMonitor.self) private var monitor
     @State private var sortOrder = [KeyPathComparator(\MonitoredSession.sortableLastActivity, order: .reverse)]
+    @State private var layout = ColumnLayoutStore(key: "columnLayout.live")
 
     private var sorted: [MonitoredSession] { rows.sorted(using: sortOrder) }
 
@@ -111,33 +130,49 @@ struct LiveSessionsTable: View {
     }
 
     private var table: some View {
-        Table(sorted, selection: $selection, sortOrder: $sortOrder) {
-            TableColumn("") { session in
+        Table(sorted, selection: $selection, sortOrder: $sortOrder,
+              columnCustomization: $layout.customization) {
+            // Status is fixed: without it a row loses its clearest signal, so it
+            // can be neither moved nor hidden.
+            TableColumn("") { (session: MonitoredSession) in
                 StatusBadge(status: session.status, showLabel: false)
+                    .topAlignedCell()
             }
             .width(28)
+            .disabledCustomizationBehavior(.all)
+
+            TableColumn("Name", value: \.sortableName) { session in
+                NameCell(session: session).topAlignedCell()
+            }
+            .width(min: 100, ideal: 150)
+            .customizationID("name")
 
             TableColumn("Directory", value: \.directoryName) { session in
-                DirectoryCell(session: session)
+                DirectoryCell(session: session).topAlignedCell()
             }
             .width(min: 120, ideal: 165)
+            .customizationID("directory")
 
             TableColumn("Repo / Branch") { (session: MonitoredSession) in
-                GitCell(git: session.git)
+                GitCell(git: session.git).topAlignedCell()
             }
             .width(min: 110, ideal: 155)
+            .customizationID("git")
 
             TableColumn("Notion card") { (session: MonitoredSession) in
-                NotionCell(ref: session.primaryNotionRef)
+                NotionCell(ref: session.primaryNotionRef).topAlignedCell()
             }
             .width(min: 110, ideal: 175)
+            .customizationID("notion")
 
             TableColumn("Recap") { (session: MonitoredSession) in
                 Text(session.headline)
                     .lineLimit(2)
                     .help(session.headline)
+                    .topAlignedCell()
             }
             .width(min: 120, ideal: 180)
+            .customizationID("recap")
 
             // Last-active and uptime share one column: two short lines read
             // better than two narrow columns, and it keeps every column visible
@@ -153,9 +188,10 @@ struct LiveSessionsTable: View {
                         .foregroundStyle(.tertiary)
                 }
                 .help("Last transcript activity, and how long the process has been running")
+                .topAlignedCell()
             }
             .width(min: 86, ideal: 104)
-
+            .customizationID("activity")
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
         .contextMenu(forSelectionType: MonitoredSession.ID.self) { ids in
@@ -192,11 +228,19 @@ struct HistoryTable: View {
 
     @Environment(FleetMonitor.self) private var monitor
     @State private var sortOrder = [KeyPathComparator(\MonitoredSession.sortableLastActivity, order: .reverse)]
+    @State private var layout = ColumnLayoutStore(key: "columnLayout.history")
 
     private var sorted: [MonitoredSession] { rows.sorted(using: sortOrder) }
 
     var body: some View {
-        Table(sorted, selection: $selection, sortOrder: $sortOrder) {
+        Table(sorted, selection: $selection, sortOrder: $sortOrder,
+              columnCustomization: $layout.customization) {
+            TableColumn("Name", value: \.sortableName) { session in
+                NameCell(session: session).topAlignedCell()
+            }
+            .width(min: 100, ideal: 145)
+            .customizationID("name")
+
             TableColumn("Recap", value: \.headline) { session in
                 VStack(alignment: .leading, spacing: 1) {
                     Text(session.headline)
@@ -208,23 +252,28 @@ struct HistoryTable: View {
                         .foregroundStyle(.tertiary)
                 }
                 .help(session.headline)
+                .topAlignedCell()
             }
-            .width(min: 140, ideal: 200)
+            .width(min: 140, ideal: 195)
+            .customizationID("recap")
 
             TableColumn("Directory", value: \.directoryName) { session in
-                DirectoryCell(session: session)
+                DirectoryCell(session: session).topAlignedCell()
             }
-            .width(min: 105, ideal: 145)
+            .width(min: 105, ideal: 140)
+            .customizationID("directory")
 
             TableColumn("Repo / Branch") { (session: MonitoredSession) in
-                GitCell(git: session.git)
+                GitCell(git: session.git).topAlignedCell()
             }
-            .width(min: 100, ideal: 140)
+            .width(min: 100, ideal: 135)
+            .customizationID("git")
 
             TableColumn("Notion card") { (session: MonitoredSession) in
-                NotionCell(ref: session.primaryNotionRef)
+                NotionCell(ref: session.primaryNotionRef).topAlignedCell()
             }
-            .width(min: 100, ideal: 148)
+            .width(min: 100, ideal: 145)
+            .customizationID("notion")
 
             TableColumn("Last active", value: \.sortableLastActivity) { session in
                 VStack(alignment: .leading, spacing: 1) {
@@ -234,8 +283,10 @@ struct HistoryTable: View {
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                 }
+                .topAlignedCell()
             }
             .width(min: 86, ideal: 100)
+            .customizationID("lastActive")
 
             TableColumn("Active for", value: \.sortableActiveSeconds) { session in
                 VStack(alignment: .leading, spacing: 1) {
@@ -245,8 +296,10 @@ struct HistoryTable: View {
                         .foregroundStyle(.tertiary)
                 }
                 .help("Working time excludes gaps longer than 5 minutes; span is first to last activity.")
+                .topAlignedCell()
             }
             .width(min: 80, ideal: 92)
+            .customizationID("activeFor")
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
         .contextMenu(forSelectionType: MonitoredSession.ID.self) { ids in
@@ -281,6 +334,8 @@ struct HistoryTable: View {
 extension MonitoredSession {
     /// Comparators need non-optional values, so absent dates sort oldest.
     var sortableLastActivity: Date { lastActivity ?? .distantPast }
+    /// Unnamed sessions sort last rather than first.
+    var sortableName: String { name ?? "\u{10FFFF}" }
     var sortableDuration: TimeInterval { duration ?? 0 }
     var sortableActiveSeconds: TimeInterval { digest.activeSeconds }
 }

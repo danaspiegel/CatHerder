@@ -9,11 +9,16 @@ struct CatHerderApp: App {
     /// One monitor instance shared by the window and the menu bar.
     @State private var monitor = FleetMonitor()
 
+    init() {
+        // Answers --check-automation and exits; a no-op otherwise.
+        Diagnostics.runIfRequested()
+    }
+
     /// Same key RootView reads, so the menu item and the view stay in step.
     @AppStorage("showsStatusBar") private var showsStatusBar = true
 
     var body: some Scene {
-        Window("CatHerder", id: AppWindow.main.rawValue) {
+        Window("Cat Herder", id: AppWindow.main.rawValue) {
             RootView()
                 .environment(monitor)
                 .task {

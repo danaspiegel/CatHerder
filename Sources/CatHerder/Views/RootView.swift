@@ -194,7 +194,7 @@ struct RootView: View {
         let needle = search.lowercased()
         return source.filter { row in
             let haystack = [
-                row.cwd, row.git.branch, row.git.repoName, row.headline,
+                row.name, row.cwd, row.git.branch, row.git.repoName, row.headline,
                 row.primaryNotionRef?.displayTitle, row.sessionID
             ]
             return haystack.compactMap { $0?.lowercased() }.contains { $0.contains(needle) }

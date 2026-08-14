@@ -58,7 +58,7 @@ struct MenuBarContent: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
-                Text("CatHerder").font(.headline)
+                Text("Cat Herder").font(.headline)
                 Text(summary).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()

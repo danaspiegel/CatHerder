@@ -146,6 +146,12 @@ Asking first means a denial changes nothing on screen.
 The call is synchronous and blocks while the consent dialog is up, so it runs off
 the main thread — otherwise the window freezes behind the prompt.
 
+Permission belongs to the *responsible process*, which is not always this app:
+launching it from a terminal makes the terminal responsible, so the terminal's
+existing grant is used, no prompt appears, and the app never shows up in the
+Automation list. `--check-automation` prints what the app sees from its own
+identity, which is the quickest way to tell the two situations apart.
+
 The four answers map to distinct outcomes: granted (send the event), never asked
 (raise the prompt, then act on the reply), denied (report it, and offer a button
 that opens the Automation pane), and target not running (the tab is gone).
@@ -177,7 +183,7 @@ regression tests:
 ## Visual review without Screen Recording permission
 
 ```bash
-"build/CatHerder.app/Contents/MacOS/CatHerder" --snapshot /tmp/shots
+"build/Cat Herder.app/Contents/MacOS/CatHerder" --snapshot /tmp/shots
 ```
 
 The app drives itself through each view, writes PNGs, and exits. It renders its

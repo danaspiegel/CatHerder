@@ -15,6 +15,7 @@ back to the right terminal tab in one click.
 | | |
 | --- | --- |
 | **Status** | Working, Needs you, or Idle |
+| **Name** | the name you gave the session with `/rename` |
 | **Directory** | the process's actual working directory |
 | **Repo / branch** | read from `.git` on disk; linked worktrees are labelled |
 | **Notion card** | which card the session is working on, if you use the Notion MCP |
@@ -33,6 +34,9 @@ message).
 recent instructions you gave, files changed, subagents launched, tools and skills
 used, token count, and a copy-ready `claude --resume` command.
 
+Columns can be dragged into whatever order you like and hidden from the header's
+context menu; the arrangement is remembered per view across launches.
+
 **Menu bar** — a live instance count, with a popover listing every session at a
 glance. Click one to jump to its terminal.
 
@@ -50,13 +54,13 @@ No third-party dependencies. No network access.
 
 Download the latest `CatHerder.zip` from
 [Releases](https://github.com/danaspiegel/CatHerder/releases), unzip it, and drag
-**CatHerder.app** to `/Applications`.
+**Cat Herder.app** to `/Applications`.
 
 Releases are ad-hoc signed rather than notarized, so macOS will block the first
 launch. Right-click the app and choose **Open**, or clear the quarantine flag:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/CatHerder.app
+xattr -dr com.apple.quarantine "/Applications/Cat Herder.app"
 ```
 
 ### From source
@@ -85,6 +89,17 @@ You can also open `Package.swift` in Xcode and run from there.
 The first time you use "Switch to Terminal Tab", macOS asks permission to
 control your terminal via Apple Events. Approve it, or grant it later in **System
 Settings → Privacy & Security → Automation**.
+
+If no prompt ever appears and Cat Herder is missing from that Automation list,
+it was probably launched *from a terminal*. Permission is granted to the
+responsible process, and a terminal-launched app inherits the terminal's own
+permission rather than getting its own — so nothing is asked and nothing is
+listed. Launch it from Finder, Spotlight or `/Applications` instead. To see what
+the app itself thinks:
+
+```bash
+"/Applications/Cat Herder.app/Contents/MacOS/CatHerder" --check-automation
+```
 
 Terminal.app and iTerm2 can be driven tab-by-tab. Other emulators (Ghostty,
 WezTerm, Warp, VS Code, Alacritty, Hyper, Tabby) don't expose individual tabs to
@@ -152,7 +167,7 @@ There is also a screenshot tool that needs no Screen Recording permission — it
 renders the app's own view hierarchy through AppKit:
 
 ```bash
-"build/CatHerder.app/Contents/MacOS/CatHerder" --snapshot /tmp/shots
+"build/Cat Herder.app/Contents/MacOS/CatHerder" --snapshot /tmp/shots
 ```
 
 The one rule worth knowing before changing behaviour: everything in the app is

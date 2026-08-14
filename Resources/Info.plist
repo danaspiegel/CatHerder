@@ -11,9 +11,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>CatHerder</string>
+	<string>Cat Herder</string>
 	<key>CFBundleDisplayName</key>
-	<string>CatHerder</string>
+	<string>Cat Herder</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -34,7 +34,7 @@
 	<string>Local monitoring utility. Reads only your own Claude Code data.</string>
 	<!-- Required to focus a terminal tab via AppleScript. -->
 	<key>NSAppleEventsUsageDescription</key>
-	<string>CatHerder uses Apple Events to bring the terminal tab for a Claude Code session to the front.</string>
+	<string>Cat Herder uses Apple Events to bring the terminal tab for a Claude Code session to the front.</string>
 	<key>NSAppleScriptEnabled</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>

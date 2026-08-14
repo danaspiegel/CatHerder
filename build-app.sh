@@ -2,7 +2,7 @@
 #
 # Builds CatHerder into a real .app bundle.
 #
-#   ./build-app.sh              release build into ./build/CatHerder.app
+#   ./build-app.sh              release build into ./build/Cat Herder.app
 #   ./build-app.sh --debug      debug build (faster compile)
 #   ./build-app.sh --install    also copy into /Applications
 #   ./build-app.sh --run        launch when finished
@@ -24,7 +24,7 @@ for arg in "$@"; do
     esac
 done
 
-APP_NAME="CatHerder"
+APP_NAME="Cat Herder"
 BUNDLE_ID="co.foundertherapy.CatHerder"
 OUT_DIR="build"
 APP="$OUT_DIR/$APP_NAME.app"

@@ -122,6 +122,13 @@ enum TranscriptParser {
             case "ai-title":
                 if let title = object["aiTitle"] as? String, !title.isEmpty { d.aiTitle = title }
                 return
+            case "custom-title":
+                // The name set with /rename. Unlike ai-title this is the user's
+                // own words, so it takes precedence wherever both exist.
+                if let name = object["customTitle"] as? String, !name.isEmpty {
+                    d.customName = name
+                }
+                return
             case "pr-link":
                 if let url = object["prUrl"] as? String,
                    let number = object["prNumber"] as? Int {

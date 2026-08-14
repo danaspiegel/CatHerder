@@ -119,6 +119,8 @@ struct TranscriptDigest: Sendable, Hashable, Codable {
 
     /// Claude Code's own generated one-liner for the session.
     var aiTitle: String?
+    /// The name the user gave the session with `/rename`, if any.
+    var customName: String?
     /// Most recent human prompts, newest first.
     var recentPrompts: [String] = []
     /// The very first human prompt — usually the clearest statement of intent.
@@ -281,6 +283,12 @@ struct MonitoredSession: Sendable, Identifiable {
 
     /// The card this session is most likely working on.
     var primaryNotionRef: NotionRef? { workedNotionRefs.first }
+
+    /// The `/rename` name, or nil when the session was never named.
+    var name: String? {
+        guard let name = digest.customName, !name.isEmpty else { return nil }
+        return name
+    }
 
     var headline: String {
         if let t = digest.aiTitle, !t.isEmpty { return t }

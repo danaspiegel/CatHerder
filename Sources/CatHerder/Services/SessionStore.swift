@@ -168,8 +168,10 @@ actor SessionStore {
     // MARK: - Cache persistence
 
     /// Bump when the digest shape changes, so stale entries are discarded
-    /// instead of being trusted.
-    private static let cacheSchemaVersion = 2
+    /// instead of being trusted. Version 3 added the `/rename` session name:
+    /// without a bump, cached digests keep reporting no name until their
+    /// transcript happens to change.
+    private static let cacheSchemaVersion = 3
 
     private struct CacheFile: Codable {
         var version: Int?
