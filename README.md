@@ -91,7 +91,12 @@ control your terminal via Apple Events. Approve it, or grant it later in **Syste
 Settings → Privacy & Security → Automation**.
 
 If no prompt ever appears and Cat Herder is missing from that Automation list,
-it was probably launched *from a terminal*. Permission is granted to the
+the build is probably missing the `com.apple.security.automation.apple-events`
+entitlement — the hardened runtime blocks Apple Events without it, and a blocked
+event never raises a prompt. `codesign -d --entitlements - "/Applications/Cat Herder.app"`
+should list it.
+
+The other cause is launching *from a terminal*. Permission is granted to the
 responsible process, and a terminal-launched app inherits the terminal's own
 permission rather than getting its own — so nothing is asked and nothing is
 listed. Launch it from Finder, Spotlight or `/Applications` instead. To see what

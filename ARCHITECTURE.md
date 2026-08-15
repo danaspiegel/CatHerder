@@ -146,7 +146,14 @@ Asking first means a denial changes nothing on screen.
 The call is synchronous and blocks while the consent dialog is up, so it runs off
 the main thread — otherwise the window freezes behind the prompt.
 
-Permission belongs to the *responsible process*, which is not always this app:
+Two things have to be true before macOS will even ask. The app is signed with the
+hardened runtime, which blocks Apple Events unless the bundle carries the
+`com.apple.security.automation.apple-events` entitlement — and a blocked event
+raises no consent prompt, so the app never appears in the Automation list at all.
+`Resources/CatHerder.entitlements` supplies it, and `build-app.sh` passes it to
+`codesign`.
+
+Second, permission belongs to the *responsible process*, which is not always this app:
 launching it from a terminal makes the terminal responsible, so the terminal's
 existing grant is used, no prompt appears, and the app never shows up in the
 Automation list. `--check-automation` prints what the app sees from its own

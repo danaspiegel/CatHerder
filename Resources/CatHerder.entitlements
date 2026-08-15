@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Required to send Apple Events under the hardened runtime, which is what
+	  lets the app focus a terminal tab. Without it macOS blocks every event
+	  outright: no consent prompt appears and the app never shows up in
+	  Privacy & Security > Automation.
+	-->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+</dict>
+</plist>

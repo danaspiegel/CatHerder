@@ -60,10 +60,15 @@ fi
 # --- Signing ------------------------------------------------------------------
 # Ad-hoc signature with a stable identifier, so macOS keeps the Automation
 # permission grant across rebuilds instead of re-prompting every time.
+#
+# The entitlements matter as much as the signature: the hardened runtime blocks
+# Apple Events unless the app declares it needs them, and a blocked event never
+# raises a consent prompt, so the app simply never appears in the Automation
+# settings list.
 echo "▸ Signing (ad-hoc)…"
 codesign --force --sign - --identifier "$BUNDLE_ID" \
-    --options runtime --timestamp=none "$APP" 2>/dev/null \
-  || codesign --force --sign - --identifier "$BUNDLE_ID" "$APP"
+    --options runtime --timestamp=none \
+    --entitlements Resources/CatHerder.entitlements "$APP"
 
 # Nudge Launch Services so the new bundle is registered immediately.
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
