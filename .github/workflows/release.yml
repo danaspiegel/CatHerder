@@ -94,8 +94,26 @@ jobs:
           Requires macOS 14 or later.
           EOF
           )
-          gh release create "$TAG" \
-            --title "CatHerder $VERSION" \
-            --notes "$NOTES" \
-            --generate-notes \
-            "$ZIP" "$ZIP.sha256"
+          # Creating a release is a single API call against an endpoint that
+          # does go down; a transient 503 here would otherwise throw away a
+          # green build. A failed attempt can leave a draft behind, which would
+          # block the retry, so each round clears it first.
+          published=0
+          for attempt in 1 2 3 4 5; do
+            if gh release create "$TAG" \
+                 --title "Cat Herder $VERSION" \
+                 --notes "$NOTES" \
+                 --generate-notes \
+                 "$ZIP" "$ZIP.sha256"; then
+              published=1
+              break
+            fi
+            delay=$((attempt * 20))
+            echo "::warning::publish attempt $attempt failed; retrying in ${delay}s"
+            gh release delete "$TAG" --yes 2>/dev/null || true
+            sleep "$delay"
+          done
+          if [ "$published" -ne 1 ]; then
+            echo "::error::could not publish $TAG after 5 attempts"
+            exit 1
+          fi
