@@ -56,6 +56,12 @@ jobs:
           codesign --verify --deep --strict "$APP"
           # Fail loudly rather than shipping an app with no icon.
           test -f "$APP/Contents/Resources/AppIcon.icns"
+          # The hardened runtime blocks Apple Events without this entitlement,
+          # and a blocked event never even prompts — so a build missing it can
+          # never switch terminal tabs.
+          codesign -d --entitlements - "$APP" 2>&1 \
+            | grep -q "com.apple.security.automation.apple-events" \
+            || { echo "::error::Apple Events entitlement missing"; exit 1; }
 
       - name: Package
         run: |
